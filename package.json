@@ -1,0 +1,47 @@
+{
+  "name": "dunno",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "format": "prettier --write .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dallas1295/dunno.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dallas1295/dunno/issues"
+  },
+  "homepage": "https://github.com/dallas1295/dunno#readme",
+  "devDependencies": {
+    "@types/node": "^24.0.4",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.1.8",
+    "eslint": "^9.29.0",
+    "eslint-config-next": "^15.3.4",
+    "prettier": "^3.6.1",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@opentelemetry/exporter-prometheus": "^0.202.0",
+    "@opentelemetry/sdk-metrics": "^2.0.1",
+    "argon2": "^0.43.0",
+    "jose": "^6.0.11",
+    "next": "^15.3.4",
+    "otpauth": "^9.4.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "redis": "^5.5.6"
+  }
+}
