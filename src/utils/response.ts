@@ -1,45 +1,29 @@
-import type { NextApiResponse } from "next";
-
-export interface ResponseShape {
-  status?: number;
-  message?: string;
-  error?: string;
-  data?: unknown;
-}
-
-export class ResponseUtil {
-  static success(res: NextApiResponse, data: unknown) {
-    res.status(200).json({ data });
+export class AppResponseUtil {
+  static success(data: unknown) {
+    return Response.json({ data }, { status: 200 });
   }
-
-  static created(res: NextApiResponse, data: unknown) {
-    res.status(201).json({
-      message: "Resource created successfully",
-      data,
-    });
+  static created(data: unknown) {
+    return Response.json(
+      { message: "Resource created successfully", data },
+      { status: 201 },
+    );
   }
-
-  static badRequest(res: NextApiResponse, message: string) {
-    res.status(400).json({ error: message });
+  static badRequest(message: string) {
+    return Response.json({ error: message }, { status: 400 });
   }
-
-  static unauthorized(res: NextApiResponse, message: string) {
-    res.status(401).json({ error: message });
+  static unauthorized(message: string) {
+    return Response.json({ error: message }, { status: 401 });
   }
-
-  static forbidden(res: NextApiResponse, message: string) {
-    res.status(403).json({ error: message });
+  static forbidden(message: string) {
+    return Response.json({ error: message }, { status: 403 });
   }
-
-  static notFound(res: NextApiResponse, message: string) {
-    res.status(404).json({ error: message });
+  static notFound(message: string) {
+    return Response.json({ error: message }, { status: 404 });
   }
-
-  static tooManyRequests(res: NextApiResponse, message: string) {
-    res.status(429).json({ error: message });
+  static tooManyRequests(message: string) {
+    return Response.json({ error: message }, { status: 429 });
   }
-
-  static internalError(res: NextApiResponse, message: string) {
-    res.status(500).json({ error: message });
+  static internalError(message: string) {
+    return Response.json({ error: message }, { status: 500 });
   }
 }
