@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 15s # How frequently to scrape targets
+  evaluation_interval: 15s # How frequently to evaluate rules
+
+# rule_files:
+#   - "tls_rules.yml" # Create this file for TLS-specific recording rules
+
+scrape_configs:
+  - job_name: "dunno"
+    static_configs:
+      - targets: ["host.docker.internal:9464"] # Changed to the metrics port
+    metrics_path: "/metrics"
+    scheme: "http" # Changed to http since metrics typically don't need HTTPS
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
