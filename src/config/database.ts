@@ -65,18 +65,3 @@ export async function ensureIndexes() {
     content: "text",
   });
 }
-
-// // (Optional) You can add a testConnection function for local testing, but don't run it automatically in Next.js
-// export async function testConnection() {
-//   try {
-//     console.log("Attempting to connect to MongoDB...");
-//     const client = await connectToDb();
-//     console.log("Successfully connected to MongoDB.");
-//
-//     console.log("Attempting to close the connection...");
-//     await closeDatabaseConnection();
-//     console.log("Successfully closed the connection.");
-//   } catch (error) {
-//     console.error("Connection test failed:", error);
-//   }
-// }
