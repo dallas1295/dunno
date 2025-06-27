@@ -5,7 +5,7 @@ import { generateRecoveryCodes } from "@/utils/recovery";
 import { verifyTOTP } from "@/utils/totp";
 import { hashPassword, verifyPassword } from "@/services/password";
 import QRCode from "qrcode";
-import OTPAuth from "otpauth";
+import * as OTPAuth from "otpauth";
 import { ErrorCounter } from "@/utils/otel";
 import { ChangeRateLimit } from "@/utils/rateLimit";
 import "dotenv/config";

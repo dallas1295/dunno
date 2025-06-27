@@ -4,7 +4,7 @@ import { RedisManager } from "@/services/valkey";
 import { secretKey, tokenConfig, TokenPair } from "@/utils/token";
 import "dotenv/config";
 
-interface UserPayload extends JWTPayload {
+export interface UserPayload extends JWTPayload {
   userId: string;
   username: string;
   type?: string;
@@ -48,7 +48,7 @@ export const tokenService = {
     }
   },
 
-  verifyToken: async (token: string): Promise<JWTPayload> => {
+  verifyToken: async (token: string): Promise<UserPayload> => {
     try {
       const isBlacklisted = await tokenService.isTokenBlacklisted(token);
       if (isBlacklisted) {
@@ -60,7 +60,7 @@ export const tokenService = {
         audience: tokenConfig.audience,
       });
 
-      return payload;
+      return payload as UserPayload;
     } catch (error) {
       console.error("Token verification failed:", error);
       throw new Error("Invalid token");
