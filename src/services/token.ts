@@ -89,21 +89,39 @@ export const tokenService = {
     }
   },
 
-  blacklistTokens: async (
-    tokens: Array<{ token: string; type: "access" | "refresh" }>,
-  ): Promise<void> => {
+  blacklistTokens: async (tokens: string[]): Promise<void> => {
     try {
       await Promise.all(
-        tokens.map(async ({ token, type }) => {
-          const { payload } = await jwtVerify(token, secretKey);
-          if (payload.exp) {
-            const keyRedis = `blacklist:${type}:${token}`;
-            const timeDiff = payload.exp - Math.floor(Date.now() / 1000);
-            await RedisManager.setex(keyRedis, timeDiff, "true");
+        tokens.map(async (token) => {
+          try {
+            const payloadB64 = token.split(".")[1];
+            if (payloadB64) {
+              const payloadString = Buffer.from(
+                payloadB64,
+                "base64url",
+              ).toString("utf8");
+              const payload = JSON.parse(payloadString) as JWTPayload;
+
+              if (payload.exp) {
+                const keyRedis = `blacklist:${token}`;
+                const timeDiff = payload.exp - Math.floor(Date.now() / 1000);
+                if (timeDiff > 0) {
+                  await RedisManager.setex(keyRedis, timeDiff, "true");
+                }
+              }
+            }
+          } catch (error) {
+            // Log error for individual token processing but don't fail the whole batch
+            console.error(
+              `Failed to process token for blacklisting: ${token}`,
+              error,
+            );
           }
         }),
       );
     } catch (error) {
+      // This will catch errors from Promise.all if it's configured to fail fast,
+      // though with individual try/catch, it's less likely.
       console.error("Error blacklisting tokens:", error);
       throw new Error("Failed to blacklist tokens");
     }
@@ -111,9 +129,10 @@ export const tokenService = {
 
   isTokenBlacklisted: async (token: string): Promise<boolean> => {
     try {
-      const keyRedis = `blacklist:*:${token}`;
-      const keys = await RedisManager.keys(keyRedis);
-      return keys.length > 0;
+      const keyRedis = `blacklist:${token}`;
+      const client = await RedisManager.getClient();
+      const result = await client.get(keyRedis);
+      return result !== null;
     } catch (error) {
       console.error("Error checking blacklist:", error);
       throw new Error("Failed to check token blacklist");
@@ -141,6 +160,24 @@ export const tokenService = {
     } catch (error) {
       console.error("Error generating temporary token:", error);
       throw new Error("Failed to generate temporary token");
+    }
+  },
+
+  verifyTempToken: async (token: string): Promise<UserPayload> => {
+    try {
+      const { payload } = await jwtVerify(token, secretKey, {
+        issuer: tokenConfig.issuer,
+        audience: tokenConfig.audience,
+      });
+
+      if (payload.type !== "temp") {
+        throw new Error("Invalid temporary token");
+      }
+
+      return payload as UserPayload;
+    } catch (error) {
+      console.error("Temporary token verification failed:", error);
+      throw new Error("Invalid temporary token");
     }
   },
 
