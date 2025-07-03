@@ -12,30 +12,7 @@ export interface User {
   recoveryCodes?: string[];
 }
 
-export interface LoginRequest {
-  username: string;
-  password: string;
-  twoFactorCode?: string;
-}
 
-export interface ChangeEmailRequest {
-  newEmail: string;
-}
-
-export interface ChangePasswordRequest {
-  oldPassword: string;
-  newPassword: string;
-}
-
-export interface DeleteUserRequest {
-  passwordOne: string;
-  passwordTwo: string;
-}
-
-export interface DisableTwoFactorRequest {
-  password: string;
-  totp: string;
-}
 
 export interface UserProfile {
   username: string;
