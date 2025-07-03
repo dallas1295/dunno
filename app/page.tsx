@@ -17,7 +17,9 @@ export default function HomePage() {
       {/* Example of displaying data from a tRPC query */}
       {/* {helloQuery.data && <p>{helloQuery.data.greeting}</p>} */}
 
-      <p>To run your application, use the command: `npm run dev` or `yarn dev`</p>
+      <p>
+        To run your application, use the command: `npm run dev` or `yarn dev`
+      </p>
     </div>
   );
 }
