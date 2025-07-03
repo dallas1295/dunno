@@ -402,12 +402,7 @@ export class UserService {
     }
   }
 
-  async deleteUser(
-    userId: string,
-    passwordOnce: string,
-    passwordTwice: string,
-    totp?: string,
-  ): Promise<void> {
+  async deleteUser(userId: string, passwordOnce: string): Promise<void> {
     try {
       const exists = await this.userRepo.findById(userId);
       if (!exists) {
@@ -421,26 +416,6 @@ export class UserService {
 
       if (!verifiedPasswordOnce) {
         throw new Error("Invalid password");
-      }
-      const verifiedPasswordTwice = await verifyPassword(
-        exists.passwordHash,
-        passwordTwice,
-      );
-
-      if (!verifiedPasswordTwice) {
-        throw new Error("Invalid password");
-      }
-      if (exists.twoFactorEnabled) {
-        if (!totp) {
-          throw new Error("OTP is require when two-factor is enabled");
-        }
-        const verifiedTotp = verifyTOTP(
-          OTPAuth.Secret.fromBase32(exists.twoFactorSecret!),
-          totp,
-        );
-        if (!verifiedTotp) {
-          throw new Error("OTP cannot be verified");
-        }
       }
 
       return await this.userRepo.deleteUserById(userId);
