@@ -92,6 +92,7 @@ export const userRouter = router({
         });
       }
     }),
+
   login: publicRoute
     .input(
       z.object({
