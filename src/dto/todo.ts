@@ -5,9 +5,7 @@ interface TodoLink {
   method?: string;
 }
 
-
-
-interface TodoResponse {
+export interface TodoResponse {
   todoId: string;
   todoName: string;
   description: string;
