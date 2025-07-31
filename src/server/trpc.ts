@@ -3,6 +3,7 @@ import { type FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import superjson from "superjson";
 import { parse } from "cookie";
 import { tokenService, UserPayload } from "@/services/token";
+import { getUserService } from "@/config/service";
 
 // init tRPC
 const t = initTRPC.context<typeof createTRPCContext>().create({
@@ -65,9 +66,19 @@ const isTempAuthenticated = t.middleware(async ({ ctx, next }) => {
     throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid token" });
   }
 });
-const isAuthenticated = t.middleware(({ ctx, next }) => {
+const isAuthenticated = t.middleware(async ({ ctx, next }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  const userService = await getUserService();
+  const validUser = await userService.findById(ctx.user.userId);
+
+  if (!validUser) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "User not found",
+    });
   }
 
   return next({
