@@ -265,32 +265,19 @@ export const userRouter = router({
   profile: protectedRoute.query(async ({ ctx }) => {
     HTTPMetrics.track("GET", "/profile");
 
-    const userId = ctx.user?.userId;
-    if (!userId) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "User not authenticated",
-      });
-    }
+    const userId = ctx.user.userId;
 
     try {
       const service = await getUserService();
-      const user = await service.findById(userId);
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        });
-      }
-      const userData = await service.getProfile(user.userId);
+      const userData = await service.getProfile(userId);
 
       return {
         ...userData,
         links: {
-          self: makeUserLink(user.userId, "self"),
-          changeEmail: makeUserLink(user.userId, "changeEmail"),
-          changePassword: makeUserLink(user.userId, "changePassword"),
-          changeUsername: makeUserLink(user.userId, "changeUsername"),
+          self: makeUserLink(userId, "self"),
+          changeEmail: makeUserLink(userId, "changeEmail"),
+          changePassword: makeUserLink(userId, "changePassword"),
+          changeUsername: makeUserLink(userId, "changeUsername"),
           logout: { href: `/api/auth/logout` },
         },
       };
@@ -322,18 +309,7 @@ export const userRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       HTTPMetrics.track("POST", "/delete");
-      const userId = ctx.user?.userId;
-
-      if (!userId) {
-        ErrorCounter.add(1, {
-          type: "auth",
-          operation: "account_deletion_failed",
-        });
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Missing or invalid Token",
-        });
-      }
+      const userId = ctx.user.userId;
 
       if (await RateLimiter.isRateLimited(ctx.ip, userId)) {
         throw new TRPCError({
@@ -352,15 +328,8 @@ export const userRouter = router({
 
       try {
         const userService = await getUserService();
-        const user = await userService.findById(userId);
-        if (!user) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "User not found",
-          });
-        }
 
-        await userService.deleteUser(user.userId, input.passwordOne);
+        await userService.deleteUser(userId, input.passwordOne);
 
         const accessToken = ctx.cookies.accessToken;
         const refreshToken = ctx.cookies.refreshToken;
@@ -425,19 +394,7 @@ export const userRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       HTTPMetrics.track("PUT", "/change-email");
-
-      const userId = ctx.user?.userId;
-
-      if (!userId) {
-        ErrorCounter.add(1, {
-          type: "auth",
-          operation: "change_email_unauthorized",
-        });
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Missing or invalid Token",
-        });
-      }
+      const userId = ctx.user.userId;
 
       if (await RateLimiter.isRateLimited(ctx.ip, userId)) {
         throw new TRPCError({
@@ -448,16 +405,8 @@ export const userRouter = router({
 
       try {
         const userService = await getUserService();
-        const user = await userService.findById(userId);
 
-        if (!user) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "User not found",
-          });
-        }
-
-        await userService.updateEmail(user.userId, input.newEmail);
+        await userService.updateEmail(userId, input.newEmail);
 
         await RateLimiter.resetAttempts(ctx.ip, userId);
         return { message: "User email has been updated" };
@@ -499,19 +448,7 @@ export const userRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       HTTPMetrics.track("PUT", "/change-password");
-
-      const userId = ctx.user?.userId;
-
-      if (!userId) {
-        ErrorCounter.add(1, {
-          type: "auth",
-          operation: "change_password_unauthorized",
-        });
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Missing or invalid Token",
-        });
-      }
+      const userId = ctx.user.userId;
 
       if (await RateLimiter.isRateLimited(ctx.ip, userId)) {
         throw new TRPCError({
@@ -529,17 +466,9 @@ export const userRouter = router({
 
       try {
         const userService = await getUserService();
-        const user = await userService.findById(userId);
-
-        if (!user) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "User not found",
-          });
-        }
 
         await userService.changePassword(
-          user.userId,
+          userId,
           input.newPassword,
           input.oldPassword,
         );
@@ -584,19 +513,7 @@ export const userRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       HTTPMetrics.track("PUT", "/update-username");
-
-      const userId = ctx.user?.userId;
-
-      if (!userId) {
-        ErrorCounter.add(1, {
-          type: "auth",
-          operation: "update_username_unauthorized",
-        });
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Missing or invalid Token",
-        });
-      }
+      const userId = ctx.user.userId;
 
       if (await RateLimiter.isRateLimited(ctx.ip, userId)) {
         throw new TRPCError({
@@ -607,17 +524,9 @@ export const userRouter = router({
 
       try {
         const userService = await getUserService();
-        const user = await userService.findById(userId);
-
-        if (!user) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "User not found",
-          });
-        }
 
         await userService.updateUsername(
-          user.userId,
+          userId,
           input.oldUsername,
           input.newUsername,
         );
@@ -655,20 +564,16 @@ export const userRouter = router({
     }),
   enableTwoFactor: protectedRoute.mutation(async ({ ctx }) => {
     HTTPMetrics.track("POST", "/2fa/setup");
-    const userId = ctx.user?.userId;
-
-    if (!userId) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "User not authenticated",
-      });
-    }
+    const userId = ctx.user.userId;
 
     try {
       const userService = await getUserService();
       const user = await userService.findById(userId);
       if (!user) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "User not found",
+        });
       }
 
       if (user.twoFactorEnabled) {
@@ -701,14 +606,7 @@ export const userRouter = router({
     .input(z.object({ token: z.string() }))
     .mutation(async ({ input, ctx }) => {
       HTTPMetrics.track("POST", "/2fa/verify");
-      const userId = ctx.user?.userId;
-
-      if (!userId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "User not authenticated",
-        });
-      }
+      const userId = ctx.user.userId;
 
       try {
         const userService = await getUserService();
@@ -775,14 +673,7 @@ export const userRouter = router({
     .input(z.object({ password: z.string(), totp: z.string() }))
     .mutation(async ({ input, ctx }) => {
       HTTPMetrics.track("POST", "/2fa/disable");
-      const userId = ctx.user?.userId;
-
-      if (!userId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "User not authenticated",
-        });
-      }
+      const userId = ctx.user.userId;
 
       try {
         const userService = await getUserService();
@@ -801,6 +692,75 @@ export const userRouter = router({
           code: "INTERNAL_SERVER_ERROR",
           message:
             error instanceof Error ? error.message : "Error disabling 2FA",
+        });
+      }
+    }),
+
+  useRecoveryCode: tempAuthRoute
+    .input(z.object({ recoveryCode: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      HTTPMetrics.track("POST", "/2fa/recover");
+      const userId = ctx.user.userId;
+
+      try {
+        const userService = await getUserService();
+        const recovered = await userService.useRecoveryCode(
+          userId,
+          input.recoveryCode,
+        );
+
+        if (!recovered) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid recovery code",
+          });
+        }
+
+        const user = await userService.findById(userId);
+        if (!user) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+
+        const tokenPair = await tokenService.generateTokenPair(user);
+
+        const isProd = process.env.NODE_ENV === "production";
+
+        ctx.resHeaders.append(
+          "Set-Cookie",
+          serialize("accessToken", tokenPair.accessToken, {
+            httpOnly: true,
+            secure: isProd,
+            sameSite: "lax",
+            path: "/",
+          }),
+        );
+
+        ctx.resHeaders.append(
+          "Set-Cookie",
+          serialize("refreshToken", tokenPair.refreshToken, {
+            httpOnly: true,
+            secure: isProd,
+            sameSite: "lax",
+            path: "/",
+            maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+          }),
+        );
+
+        return { recovered: true };
+      } catch (error) {
+        ErrorCounter.add(1, {
+          type: "internal",
+          operation: "use_recovery_code",
+        });
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Error using recovery code",
         });
       }
     }),
