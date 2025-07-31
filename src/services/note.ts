@@ -20,7 +20,6 @@ interface NoteSearchOptions {
 export class NoteService {
   constructor(private noteRepo: NoteRepo) {}
 
-  // Business logic for the note service
   async createNote(
     userId: string,
     noteName: string,

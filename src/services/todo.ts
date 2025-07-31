@@ -109,7 +109,7 @@ export class TodoService {
       if (!isTodoValid(updatedTodo)) {
         ErrorCounter.add(1, {
           type: "validation",
-          operation: "udpate_todo_failed",
+          operation: "update_todo_failed",
         });
         throw new Error("Invalid todo update");
       }
