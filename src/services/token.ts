@@ -180,22 +180,4 @@ export const tokenService = {
       throw new Error("Invalid temporary token");
     }
   },
-
-  verifyTempToken: async (token: string): Promise<UserPayload> => {
-    try {
-      const { payload } = await jwtVerify(token, secretKey, {
-        issuer: tokenConfig.issuer,
-        audience: tokenConfig.audience,
-      });
-
-      if (payload.type !== "temp") {
-        throw new Error("Invalid temporary token");
-      }
-
-      return payload as UserPayload;
-    } catch (error) {
-      console.error("Temporary token verification failed:", error);
-      throw new Error("Invalid temporary token");
-    }
-  },
 };
