@@ -1,7 +1,6 @@
 import "dotenv/config";
 import { createClient, RedisClientType } from "redis";
 
-// 1. Define your RateLimitInfo interface
 export interface RateLimitInfo {
   attempts: number;
   firstAttempt: number;
@@ -9,29 +8,34 @@ export interface RateLimitInfo {
   blocked: boolean;
 }
 
-// 2. Ensure REDIS_URL is defined
 const redisUrl = process.env.REDIS_URL;
 if (!redisUrl) {
   throw new Error("REDIS_URL is not defined in environment variables");
 }
 
-// 3. Create and type the client
-const client: RedisClientType = createClient({
-  url: redisUrl,
-});
-
-await client.connect();
+let client: RedisClientType | null = null;
+let isConnected = false;
 
 export class RedisManager {
-  private static client: RedisClientType = client;
+  private static async ensureConnected() {
+    if (!client) {
+      client = createClient({ url: redisUrl });
+    }
+    if (!isConnected) {
+      await client.connect();
+      isConnected = true;
+    }
+  }
 
   public static async getClient(): Promise<RedisClientType> {
-    return this.client;
+    await this.ensureConnected();
+    return client!;
   }
 
   public static async ping(): Promise<boolean> {
     try {
-      const reply = await this.client.ping();
+      const c = await this.getClient();
+      const reply = await c.ping();
       return reply === "PONG";
     } catch (error) {
       console.error("Redis ping failed:", error);
@@ -41,7 +45,8 @@ export class RedisManager {
 
   public static async del(key: string): Promise<boolean> {
     try {
-      const reply = await this.client.del(key);
+      const c = await this.getClient();
+      const reply = await c.del(key);
       return reply === 1;
     } catch (error) {
       console.error(`Redis DEL failed for key ${key}:`, error);
@@ -51,7 +56,8 @@ export class RedisManager {
 
   public static async keys(pattern: string): Promise<string[]> {
     try {
-      const reply = await this.client.keys(pattern);
+      const c = await this.getClient();
+      const reply = await c.keys(pattern);
       return Array.isArray(reply) ? (reply as string[]) : [];
     } catch (error) {
       console.error(`Redis KEYS failed for pattern ${pattern}:`, error);
@@ -65,7 +71,8 @@ export class RedisManager {
     value: string,
   ): Promise<boolean> {
     try {
-      const reply = await this.client.setEx(key, seconds, value);
+      const c = await this.getClient();
+      const reply = await c.setEx(key, seconds, value);
       return reply === "OK";
     } catch (error) {
       console.error(`Redis SETEX failed for key ${key}:`, error);
@@ -75,7 +82,8 @@ export class RedisManager {
 
   public static async getRateLimit(key: string): Promise<RateLimitInfo | null> {
     try {
-      const reply = await this.client.get(key);
+      const c = await this.getClient();
+      const reply = await c.get(key);
       return reply ? (JSON.parse(reply) as RateLimitInfo) : null;
     } catch (error) {
       console.error(`Redis GET failed for rate limit key ${key}:`, error);
@@ -89,7 +97,8 @@ export class RedisManager {
     seconds: number,
   ): Promise<boolean> {
     try {
-      const reply = await this.client.setEx(key, seconds, JSON.stringify(info));
+      const c = await this.getClient();
+      const reply = await c.setEx(key, seconds, JSON.stringify(info));
       return reply === "OK";
     } catch (error) {
       console.error(`Redis SETEX failed for rate limit key ${key}:`, error);
