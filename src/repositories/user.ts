@@ -1,7 +1,7 @@
 import { Collection, MongoClient } from "mongodb";
 import { User } from "@/models/user";
 import { DatabaseMetrics, ErrorCounter } from "@/utils/otel";
-import "@std/dotenv/load";
+import "dotenv/config";
 
 export class UserRepo {
   private collection: Collection<User>;
