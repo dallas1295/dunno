@@ -44,12 +44,17 @@ services:
       - app-network
 
   nextjs-app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     container_name: nextjs-app
     ports:
       - "8080:8080"
     env_file:
       - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
     depends_on:
       - mongodb
       - valkey
