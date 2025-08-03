@@ -1,5 +1,5 @@
 import { validateEmail, validatePassword } from "@/utils/user";
-import { ResponseUtil } from "@/utils/response";
+import { ResponseUtil } from "@/utils/http";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export async function validateLoginInput(

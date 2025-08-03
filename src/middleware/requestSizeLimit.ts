@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { ResponseUtil } from "@/utils/response";
-
+import { ResponseUtil } from "@/utils/http";
 export function requestSizeLimiter(maxSize: number) {
   return (req: NextApiRequest, res: NextApiResponse): boolean => {
     const contentLength = parseInt(req.headers["content-length"] || "0", 10);
