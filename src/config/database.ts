@@ -10,13 +10,12 @@ export interface DbConfig {
 }
 
 export const dbConfig: DbConfig = {
-  uri: `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@localhost:27017/${process.env.MONGO_DB}?authSource=admin`,
+  uri: `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT || "27017"}/${process.env.MONGO_DB}?authSource=admin`,
   maxPoolSize: parseInt(process.env.MONGO_MAX_POOL_SIZE || "10"),
   minPoolSize: parseInt(process.env.MONGO_MIN_POOL_SIZE || "1"),
   maxIdleTimeMS: parseInt(process.env.MONGO_MAX_CONN_IDLE_TIME || "60") * 1000,
   dbName: process.env.MONGO_DB || "test",
 };
-
 let client: MongoClient | null = null;
 
 export const connectToDb = async (): Promise<MongoClient> => {
