@@ -151,7 +151,10 @@ export const userRouter = router({
           return {
             requireTwoFactor: true,
             tempToken: temp,
-            user: user.username,
+            user: toUserResponse(user, {
+              self: makeUserLink(user.userId, "self"),
+              logout: { href: "/auth/logout", method: "POST" },
+            }),
             recoveryAvailable,
           };
         }
@@ -263,7 +266,7 @@ export const userRouter = router({
   }),
 
   profile: protectedRoute.query(async ({ ctx }) => {
-    HTTPMetrics.track("GET", "/profile");
+    HTTPMetrics.track("GET", "/:userId/profile");
 
     const userId = ctx.user.userId;
 

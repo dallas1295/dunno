@@ -117,6 +117,17 @@ export const todoRouter = router({
           throw error;
         }
 
+        if (error.message === "Todo does not exist") {
+          ErrorCounter.add(1, {
+            type: "not_found",
+            operation: "update_todo",
+          });
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: error.message,
+          });
+        }
+
         if (error.message === "Todo not found") {
           ErrorCounter.add(1, {
             type: "not_found",
@@ -162,6 +173,17 @@ export const todoRouter = router({
         await todoService.deleteTodo(userId, input.todoId);
         return { success: true };
       } catch (error: any) {
+        if (error.message === "Todo does not exist") {
+          ErrorCounter.add(1, {
+            type: "not_found",
+            operation: "delete_todo",
+          });
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: error.message,
+          });
+        }
+
         if (error.message === "Todo not found") {
           ErrorCounter.add(1, {
             type: "not_found",
@@ -188,4 +210,197 @@ export const todoRouter = router({
         });
       }
     }),
+
+  searchTodos: protectedRoute
+    .input(
+      z.object({
+        includeCompleted: z.boolean().optional(),
+        onlyWithDueDate: z.boolean().optional(),
+        onlyRecurring: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(["asc", "desc"]).optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      HTTPMetrics.track("GET", "/todos/search");
+      const userId = ctx.user.userId;
+      try {
+        const todoService = await getTodoService();
+        const todos = await todoService.searchTodos(userId, input);
+        return todos.map((todo) => {
+          const links = {
+            self: makeTodoLink(todo.todoId, "self"),
+            update: makeTodoLink(todo.todoId, "update"),
+            delete: makeTodoLink(todo.todoId, "delete"),
+          };
+          return toTodoResponse(todo, links);
+        });
+      } catch (error: any) {
+        ErrorCounter.add(1, {
+          type: "internal",
+          operation: "search_todos",
+        });
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to search todos",
+        });
+      }
+    }),
+
+  getTodoById: protectedRoute
+    .input(
+      z.object({
+        todoId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      HTTPMetrics.track("GET", `/todos/${input.todoId}`);
+      const userId = ctx.user.userId;
+      try {
+        const todoService = await getTodoService();
+        const todo = await todoService.getTodo(userId, input.todoId);
+        const links = {
+          self: makeTodoLink(todo.todoId, "self"),
+          update: makeTodoLink(todo.todoId, "update"),
+          delete: makeTodoLink(todo.todoId, "delete"),
+        };
+        return toTodoResponse(todo, links);
+      } catch (error: any) {
+        if (error.message === "Todo does not exist") {
+          ErrorCounter.add(1, {
+            type: "not_found",
+            operation: "get_todo_by_id",
+          });
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: error.message,
+          });
+        }
+        ErrorCounter.add(1, {
+          type: "internal",
+          operation: "get_todo_by_id",
+        });
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to get todo",
+        });
+      }
+    }),
+
+  getTodoStats: protectedRoute.query(async ({ ctx }) => {
+    HTTPMetrics.track("GET", "/todos/stats");
+    const userId = ctx.user.userId;
+    try {
+      const todoService = await getTodoService();
+      return await todoService.getTodoStats(userId);
+    } catch (error: any) {
+      ErrorCounter.add(1, {
+        type: "internal",
+        operation: "get_todo_stats",
+      });
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to get todo stats",
+      });
+    }
+  }),
+
+  getTodoTags: protectedRoute.query(async ({ ctx }) => {
+    HTTPMetrics.track("GET", "/todos/tags");
+    const userId = ctx.user.userId;
+    try {
+      const todoService = await getTodoService();
+      return await todoService.getTodoTags(userId);
+    } catch (error: any) {
+      ErrorCounter.add(1, {
+        type: "internal",
+        operation: "get_todo_tags",
+      });
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to get todo tags",
+      });
+    }
+  }),
+
+  toggleComplete: protectedRoute
+    .input(
+      z.object({
+        todoId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      HTTPMetrics.track("POST", `/todos/toggle/${input.todoId}`);
+      const userId = ctx.user.userId;
+      try {
+        const todoService = await getTodoService();
+        const updatedTodo = await todoService.toggleComplete(
+          userId,
+          input.todoId,
+        );
+        const links = {
+          self: makeTodoLink(updatedTodo.todoId, "self"),
+          update: makeTodoLink(updatedTodo.todoId, "update"),
+          delete: makeTodoLink(updatedTodo.todoId, "delete"),
+        };
+        return toTodoResponse(updatedTodo, links);
+      } catch (error: any) {
+        if (error.message === "Could not find todo") {
+          ErrorCounter.add(1, {
+            type: "not_found",
+            operation: "toggle_complete",
+          });
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: error.message,
+          });
+        }
+        ErrorCounter.add(1, {
+          type: "internal",
+          operation: "toggle_complete",
+        });
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to toggle todo",
+        });
+      }
+    }),
+
+  countTodos: protectedRoute.query(async ({ ctx }) => {
+    HTTPMetrics.track("GET", "/todos/count");
+    const userId = ctx.user.userId;
+    try {
+      const todoService = await getTodoService();
+      const count = await todoService.countTodos(userId);
+      return { count };
+    } catch (error: any) {
+      ErrorCounter.add(1, {
+        type: "internal",
+        operation: "count_todos",
+      });
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to count todos",
+      });
+    }
+  }),
 });
