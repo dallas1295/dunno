@@ -7,8 +7,9 @@ const inter = Inter({ subsets: ["latin"] });
 
 // Metadata for SEO and browser
 export const metadata: Metadata = {
-  title: "Dunno App",
-  description: "A Next.js application with tRPC integration.",
+  title: "Tuno - Notetaking and Todo App",
+  description:
+    "Tuno is a next-gen note taking and todo list app designed for the busy mind in an even busier world",
 };
 
 // Root layout: server component by default
